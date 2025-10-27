@@ -2,6 +2,7 @@
   "name": "chart-cfw",
   "main": "index.js",
   "type": "commonjs",
+  "version": "0.1.0",
   "scripts": {
     "build": "rollup -c"
   },

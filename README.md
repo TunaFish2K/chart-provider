@@ -2,6 +2,17 @@
 通过Cloudflare Worker，分发静态资源站的自制铺铺面。
 
 ## 部署
+### 直接下载
+可以在Release页面下载worker.min.js或者worker.js。（前者压缩过）
+### 自行构建
+```
+git clone https://github.com/TunaFish2K/chart-provider
+cd chart-provider
+npm i
+npm run build
+```
+产物在dist文件夹。  
+
 在Cloudflare上创建Worker。  
 将worker.min.js拷贝到编辑代码页面并部署。  
 添加环境变量`staticURL`为你的静态资源站URL，不带尾部斜杠。  
