@@ -39,6 +39,12 @@ interface SearchParams {
   pageNum?: number;
 }
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+} as const;
+
 export default {
   async fetch(
     request: Request,
@@ -59,7 +65,10 @@ export default {
       try {
         const siteResponse = await fetch(`${env.staticURL}/repository.json`);
         if (!siteResponse.ok) {
-          return Response.json({ error: "Site not found" }, { status: 404 });
+          return Response.json(
+            { error: "Site not found" },
+            { status: 404, headers: CORS_HEADERS }
+          );
         }
 
         const siteData: SiteInfo = await siteResponse.json();
@@ -73,11 +82,11 @@ export default {
           ),
         };
 
-        return Response.json(response);
+        return Response.json(response, { headers: CORS_HEADERS });
       } catch (error) {
         return Response.json(
           { error: "Internal Server Error" },
-          { status: 500 }
+          { status: 500, headers: CORS_HEADERS }
         );
       }
     }
@@ -98,7 +107,10 @@ export default {
           const fileResponse = await fetch(fileUrl);
 
           if (!fileResponse.ok) {
-            return Response.json({ error: "File not found" }, { status: 404 });
+            return Response.json(
+              { error: "File not found" },
+              { status: 404, headers: CORS_HEADERS }
+            );
           }
 
           // 如果proxy为true，则转发文件内容
@@ -121,7 +133,7 @@ export default {
         } catch (error) {
           return Response.json(
             { error: "Internal Server Error" },
-            { status: 500 }
+            { status: 500, headers: CORS_HEADERS }
           );
         }
       }
@@ -137,7 +149,10 @@ export default {
           `${env.staticURL}/${channel}/channel.json`
         );
         if (!channelResponse.ok) {
-          return Response.json({ error: "Channel not found" }, { status: 404 });
+          return Response.json(
+            { error: "Channel not found" },
+            { status: 404, headers: CORS_HEADERS }
+          );
         }
 
         const channelData: ChannelInfo = await channelResponse.json();
@@ -195,11 +210,11 @@ export default {
           charts: paginatedCharts,
         };
 
-        return Response.json(response);
+        return Response.json(response, { headers: CORS_HEADERS });
       } catch (error) {
         return Response.json(
           { error: "Internal Server Error" },
-          { status: 500 }
+          { status: 500, headers: CORS_HEADERS }
         );
       }
     }
@@ -214,7 +229,10 @@ export default {
           `${env.staticURL}/${channel}/${chartId}/chart.json`
         );
         if (!chartResponse.ok) {
-          return Response.json({ error: "Chart not found" }, { status: 404 });
+          return Response.json(
+            { error: "Chart not found" },
+            { status: 404, headers: CORS_HEADERS }
+          );
         }
 
         const chartData: ChartInfo = await chartResponse.json();
@@ -237,16 +255,19 @@ export default {
           file: `${baseUrl}/${fileBasePath}/file`,
         };
 
-        return Response.json(chart);
+        return Response.json(chart, { headers: CORS_HEADERS });
       } catch (error) {
         return Response.json(
           { error: "Internal Server Error" },
-          { status: 500 }
+          { status: 500, headers: CORS_HEADERS }
         );
       }
     }
 
     // 处理未知路径
-    return Response.json({ error: "Not Found" }, { status: 404 });
+    return Response.json(
+      { error: "Not Found" },
+      { status: 404, headers: CORS_HEADERS }
+    );
   },
 };
