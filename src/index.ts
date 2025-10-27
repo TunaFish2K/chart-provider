@@ -131,12 +131,24 @@ export default {
               headers.set("content-disposition", contentDisposition);
             } else {
               // 如果没有提供content-disposition，设置一个默认的
+              // 获取chart名称用于文件名
               let filename = `${chartId}_${fileType}`;
+              try {
+                const chartResponse = await fetch(
+                  `${env.staticURL}/${channel}/${chartId}/chart.json`
+                );
+                if (chartResponse.ok) {
+                  const chartData: ChartInfo = await chartResponse.json();
+                  filename = `${chartData.name}_${fileType}`;
+                }
+              } catch (error) {
+                // 如果获取chart名称失败，继续使用chartId
+              }
               // 为曲绘和预览文件添加适当的文件扩展名
               if (fileType === "illustration") {
                 filename += ".png";
               } else if (fileType === "preview") {
-                filename += ".mp3"; // 假设预览文件是mp3格式
+                filename += ".ogg"; // 假设预览文件是mp3格式
               }
               headers.set(
                 "content-disposition",
