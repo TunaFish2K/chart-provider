@@ -44,9 +44,12 @@ export default {
     request: Request,
     env: {
       staticURL: string;
+      proxy: string;
     },
     ctx: ExecutionContext
   ): Promise<Response> {
+    const proxy = env.proxy == "true";
+
     const url = new URL(request.url);
     const pathname = url.pathname;
     const searchParams = url.searchParams;
@@ -65,7 +68,8 @@ export default {
           name: siteData.name,
           description: siteData.description,
           channels: siteData.channels.map(
-            (channel) => `${request.url.replace(/\/$/, "")}/${channel}`
+            (channel) =>
+              `${url.origin || request.url.replace(/\/$/, "")}/${channel}`
           ),
         };
 
@@ -80,6 +84,48 @@ export default {
 
     // 解析路径参数
     const pathParts = pathname.split("/").filter((part) => part !== "");
+
+    // 处理文件路径 - /:channel/:chart/:fileType
+    if (pathParts.length === 3) {
+      const channel = pathParts[0];
+      const chartId = pathParts[1];
+      const fileType = pathParts[2]!;
+
+      // 只处理特定的文件类型
+      if (["illustration", "preview", "file"].includes(fileType)) {
+        try {
+          const fileUrl = `${env.staticURL}/${channel}/${chartId}/${fileType}`;
+          const fileResponse = await fetch(fileUrl);
+
+          if (!fileResponse.ok) {
+            return Response.json({ error: "File not found" }, { status: 404 });
+          }
+
+          // 如果proxy为true，则转发文件内容
+          if (proxy) {
+            const fileData = await fileResponse.arrayBuffer();
+            const contentType =
+              fileResponse.headers.get("content-type") ||
+              "application/octet-stream";
+
+            return new Response(fileData, {
+              headers: {
+                "content-type": contentType,
+                "cache-control": "public, max-age=3600",
+              },
+            });
+          } else {
+            // 如果proxy为false，返回重定向到原始文件
+            return Response.redirect(fileUrl, 302);
+          }
+        } catch (error) {
+          return Response.json(
+            { error: "Internal Server Error" },
+            { status: 500 }
+          );
+        }
+      }
+    }
 
     // 处理频道路径 - /:channel
     if (pathParts.length === 1) {
@@ -110,7 +156,11 @@ export default {
             );
             if (chartResponse.ok) {
               const chartData: ChartInfo = await chartResponse.json();
-
+              // 根据proxy设置生成文件URL
+              const baseUrl = proxy
+                ? url.origin || request.url.replace(/\/$/, "")
+                : env.staticURL;
+              const fileBasePath = `${channel}/${chartId}`;
               const chart: Chart = {
                 id: chartId || "",
                 name: chartData.name,
@@ -120,9 +170,9 @@ export default {
                 composer: chartData.composer,
                 illustrator: chartData.illustrator,
                 description: chartData.description,
-                illustration: `${env.staticURL}/${channel}/${chartId}/illustration`,
-                preview: `${env.staticURL}/${channel}/${chartId}/preview`,
-                file: `${env.staticURL}/${channel}/${chartId}/file`,
+                illustration: `${baseUrl}/${fileBasePath}/illustration`,
+                preview: `${baseUrl}/${fileBasePath}/preview`,
+                file: `${baseUrl}/${fileBasePath}/file`,
               };
 
               charts.push(chart);
@@ -168,7 +218,11 @@ export default {
         }
 
         const chartData: ChartInfo = await chartResponse.json();
-
+        // 根据proxy设置生成文件URL
+        const baseUrl = proxy
+          ? url.origin || request.url.replace(/\/$/, "")
+          : env.staticURL;
+        const fileBasePath = `${channel}/${chartId}`;
         const chart: Chart = {
           id: chartId || "",
           name: chartData.name,
@@ -178,9 +232,9 @@ export default {
           composer: chartData.composer,
           illustrator: chartData.illustrator,
           description: chartData.description,
-          illustration: `${env.staticURL}/${channel}/${chartId}/illustration`,
-          preview: `${env.staticURL}/${channel}/${chartId}/preview`,
-          file: `${env.staticURL}/${channel}/${chartId}/file`,
+          illustration: `${baseUrl}/${fileBasePath}/illustration`,
+          preview: `${baseUrl}/${fileBasePath}/preview`,
+          file: `${baseUrl}/${fileBasePath}/file`,
         };
 
         return Response.json(chart);

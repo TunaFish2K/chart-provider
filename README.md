@@ -13,9 +13,16 @@ npm run build
 ```
 产物在dist文件夹。  
 
+### 上线
 在Cloudflare上创建Worker。  
 将worker.min.js拷贝到编辑代码页面并部署。  
-添加环境变量`staticURL`为你的静态资源站URL，不带尾部斜杠。  
+#### 环境变量
+```typescript
+type Env = {
+    staticURL: string; // 静态资源站URL，不带尾部的斜杠。
+    proxy: boolean; // 是否通过worker转发铺面。
+};
+```
 根据Worker接口使用。
 
 ## 静态资源站接口
@@ -116,4 +123,21 @@ type Response = {
 获取特定铺面的内容。
 ```typescript
 type Response = Chart;
+```
+
+`GET /:channel/:chart/:fileType`
+
+获取铺面文件。当`proxy`环境变量为`true`时，worker会获取文件内容并转发给请求者；当`proxy`为`false`时，返回重定向到原始文件。
+
+支持的文件类型：
+- `illustration` - 曲绘文件
+- `preview` - 预览音乐文件  
+- `file` - 铺面文件
+
+```typescript
+// 当 proxy = true 时
+type Response = File; // 直接返回文件内容
+
+// 当 proxy = false 时  
+type Response = Redirect; // 302重定向到原始文件
 ```
