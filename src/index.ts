@@ -115,16 +115,43 @@ export default {
 
           // 如果proxy为true，则转发文件内容
           if (proxy) {
-            const fileData = await fileResponse.arrayBuffer();
+            // 使用流式传输来处理大文件
+            const headers = new Headers();
             const contentType =
               fileResponse.headers.get("content-type") ||
               "application/octet-stream";
+            headers.set("content-type", contentType);
+            headers.set("cache-control", "public, max-age=3600");
 
-            return new Response(fileData, {
-              headers: {
-                "content-type": contentType,
-                "cache-control": "public, max-age=3600",
-              },
+            // 添加Content-Disposition头信息以确保文件下载
+            const contentDisposition = fileResponse.headers.get(
+              "content-disposition"
+            );
+            if (contentDisposition) {
+              headers.set("content-disposition", contentDisposition);
+            } else {
+              // 如果没有提供content-disposition，设置一个默认的
+              let filename = `${chartId}_${fileType}`;
+              // 为曲绘和预览文件添加适当的文件扩展名
+              if (fileType === "illustration") {
+                filename += ".png";
+              } else if (fileType === "preview") {
+                filename += ".mp3"; // 假设预览文件是mp3格式
+              }
+              headers.set(
+                "content-disposition",
+                `attachment; filename="${filename}"`
+              );
+            }
+
+            // 添加CORS头信息
+            Object.entries(CORS_HEADERS).forEach(([key, value]) => {
+              headers.set(key, value);
+            });
+
+            // 直接返回原始响应，避免内存限制问题
+            return new Response(fileResponse.body, {
+              headers: headers,
             });
           } else {
             // 如果proxy为false，返回重定向到原始文件
