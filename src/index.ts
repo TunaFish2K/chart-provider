@@ -121,7 +121,10 @@ export default {
               fileResponse.headers.get("content-type") ||
               "application/octet-stream";
             headers.set("content-type", contentType);
-            headers.set("cache-control", "public, max-age=3600");
+            // 禁用文件下载的缓存
+            headers.set("cache-control", "no-cache, no-store, must-revalidate");
+            headers.set("pragma", "no-cache");
+            headers.set("expires", "0");
 
             // 添加Content-Disposition头信息以确保文件下载
             const contentDisposition = fileResponse.headers.get(
